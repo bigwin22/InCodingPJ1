@@ -5,7 +5,7 @@ import { MealCard } from "./components/MealCard";
 import { SchoolInfo } from "./components/SchoolInfo";
 import { ReviewDialog } from "./components/ReviewDialog";
 import { ReviewList } from "./components/ReviewList";
-import { School, Meal, Review } from "./types";
+import { School, Meal } from "./types";
 import {
   searchSchools,
   generateMockMeals,

@@ -67,7 +67,7 @@ export function getPreviousWeekday(date: Date): Date {
   return prevDate;
 }
 
-export function generateMockMeals(schoolId: string, date: string): DailyMeal {
+export function generateMockMeals(_schoolId: string, date: string): DailyMeal {
   const menus = {
     breakfast: [
       ["쌀밥", "미역국", "계란후라이", "김치", "우유"],

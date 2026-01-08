@@ -1,5 +1,4 @@
 import { Card } from "./ui/card";
-import { Badge } from "./ui/badge";
 import { Star, User } from "lucide-react";
 import { Review } from "../types";
 
