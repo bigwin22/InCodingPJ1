@@ -17,6 +17,7 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<"breakfast" | "lunch" | "dinner" | null>(null);
+  const [averageRating, setAverageRating] = useState<number>(0);
   
   // Data states
   const [dailyMeal, setDailyMeal] = useState<DailyMeal | null>(null);
@@ -36,17 +37,15 @@ export default function App() {
       const formattedDate = formatDate(currentDate);
       
       try {
-        const [mealsData, reviewsData] = await Promise.all([
+        const [mealsData, reviewsData, stats] = await Promise.all([
           api.getMeals(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate),
-          api.getReviews(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate)
+          api.getReviews(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate),
+          api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode)
         ]);
         
         setDailyMeal(mealsData);
         setReviews(reviewsData);
-        
-        // Update stats if needed (optional optimization)
-        // const stats = await api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode);
-        // setSelectedSchool(prev => prev ? { ...prev, averageRating: stats.average_rating } : null);
+        setAverageRating(stats.average_rating);
         
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -56,7 +55,8 @@ export default function App() {
     }
 
     fetchData();
-  }, [selectedSchool, currentDate]);
+    // Only depend on the school code to prevent loops if other school properties change
+  }, [selectedSchool?.schoolCode, currentDate]);
 
   const handleSearch = async (schoolName: string) => {
     setIsSearching(true);
@@ -102,13 +102,18 @@ export default function App() {
       setReviewDialogOpen(false);
       setSelectedMealType(null);
       
-      // Refresh reviews
-      const updatedReviews = await api.getReviews(
-        selectedSchool.schoolCode, 
-        selectedSchool.officeCode, 
-        formattedDate
-      );
+      // Refresh reviews and stats
+      const [updatedReviews, updatedStats] = await Promise.all([
+        api.getReviews(
+          selectedSchool.schoolCode, 
+          selectedSchool.officeCode, 
+          formattedDate
+        ),
+        api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode)
+      ]);
+      
       setReviews(updatedReviews);
+      setAverageRating(updatedStats.average_rating);
     } else {
       alert("리뷰 등록에 실패했습니다.");
     }
@@ -141,7 +146,7 @@ export default function App() {
         {selectedSchool ? (
           <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* 학교 정보 */}
-            <SchoolInfo school={selectedSchool} />
+            <SchoolInfo school={{ ...selectedSchool, averageRating }} />
 
             {/* 날짜 네비게이션 */}
             <DateNavigation
