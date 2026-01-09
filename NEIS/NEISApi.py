@@ -94,6 +94,16 @@ class NEISApi:
                 nutrition_dict[key.strip()] = value.strip()
         return nutrition_dict
 
+    @staticmethod
+    def parse_calories(cal_info: str) -> str:
+        """
+        Parses the CAL_INFO string to extract the value.
+        Example: "833.1 Kcal" -> "833.1"
+        """
+        if not cal_info:
+            return ""
+        return cal_info.replace("Kcal", "").strip()
+
     def get_meals(self, 
                   office_code: str, 
                   school_code: str, 
@@ -145,6 +155,8 @@ if __name__ == "__main__":
                 print(f"\n--- {meal['MMEAL_SC_NM']} ---")
                 dishes = api.parse_dishes(meal["DDISH_NM"])
                 nutrition = api.parse_nutrition(meal["NTR_INFO"])
+                calories = api.parse_calories(meal["CAL_INFO"])
+                print(f"Calories: {calories} Kcal")
                 print(f"Dishes: {dishes}")
                 print(f"Nutrition: {nutrition}")
         else:
