@@ -1,18 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchBar } from "./components/SearchBar";
 import { DateNavigation } from "./components/DateNavigation";
 import { MealCard } from "./components/MealCard";
 import { SchoolInfo } from "./components/SchoolInfo";
 import { ReviewDialog } from "./components/ReviewDialog";
 import { ReviewList } from "./components/ReviewList";
-import { School, Meal } from "./types";
-import {
-  searchSchools,
-  generateMockMeals,
-  generateMockReviews,
-  formatDate,
-  getNextWeekday
-} from "./lib/mockData";
+import { School, Meal, DailyMeal, Review } from "./types";
+import { api } from "./lib/api";
+import { formatDate, getNextWeekday } from "./lib/dateUtils";
 import { UtensilsCrossed } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 
@@ -22,23 +17,65 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<"breakfast" | "lunch" | "dinner" | null>(null);
+  
+  // Data states
+  const [dailyMeal, setDailyMeal] = useState<DailyMeal | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const handleSearch = (schoolName: string) => {
+  // Fetch meals and reviews when school or date changes
+  useEffect(() => {
+    async function fetchData() {
+      if (!selectedSchool) {
+        setDailyMeal(null);
+        setReviews([]);
+        return;
+      }
+
+      setIsLoadingData(true);
+      const formattedDate = formatDate(currentDate);
+      
+      try {
+        const [mealsData, reviewsData] = await Promise.all([
+          api.getMeals(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate),
+          api.getReviews(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate)
+        ]);
+        
+        setDailyMeal(mealsData);
+        setReviews(reviewsData);
+        
+        // Update stats if needed (optional optimization)
+        // const stats = await api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode);
+        // setSelectedSchool(prev => prev ? { ...prev, averageRating: stats.average_rating } : null);
+        
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+
+    fetchData();
+  }, [selectedSchool, currentDate]);
+
+  const handleSearch = async (schoolName: string) => {
     setIsSearching(true);
-
-    // 검색 시뮬레이션 (실제로는 API 호출)
-    setTimeout(() => {
-      const results = searchSchools(schoolName);
+    try {
+      const results = await api.searchSchools(schoolName);
       if (results.length > 0) {
         setSelectedSchool(results[0]);
-        // 가장 가까운 평일로 날짜 설정
+        // Set date to next weekday (or today if it's a weekday)
         setCurrentDate(getNextWeekday(new Date()));
       } else {
         setSelectedSchool(null);
         alert("검색 결과가 없습니다.");
       }
+    } catch (error) {
+      console.error("Search error:", error);
+      alert("검색 중 오류가 발생했습니다.");
+    } finally {
       setIsSearching(false);
-    }, 500);
+    }
   };
 
   const handleReviewClick = (mealType: "breakfast" | "lunch" | "dinner") => {
@@ -46,33 +83,38 @@ export default function App() {
     setReviewDialogOpen(true);
   };
 
-  const handleReviewSubmit = (rating: number, comment: string) => {
-    // 쿠키 기반 간단 인증 (실제로는 백엔드 처리 필요)
-    console.log("리뷰 제출:", {
-      schoolId: selectedSchool?.id,
-      date: formatDate(currentDate),
+  const handleReviewSubmit = async (rating: number, comment: string) => {
+    if (!selectedSchool || !selectedMealType) return;
+
+    const formattedDate = formatDate(currentDate);
+    
+    const success = await api.createReview({
+      schoolCode: selectedSchool.schoolCode,
+      officeCode: selectedSchool.officeCode,
+      mealDate: formattedDate,
       mealType: selectedMealType,
       rating,
-      comment
+      content: comment,
     });
 
-    setReviewDialogOpen(false);
-    setSelectedMealType(null);
-
-    // 성공 메시지
-    alert("리뷰가 등록되었습니다!");
+    if (success) {
+      alert("리뷰가 등록되었습니다!");
+      setReviewDialogOpen(false);
+      setSelectedMealType(null);
+      
+      // Refresh reviews
+      const updatedReviews = await api.getReviews(
+        selectedSchool.schoolCode, 
+        selectedSchool.officeCode, 
+        formattedDate
+      );
+      setReviews(updatedReviews);
+    } else {
+      alert("리뷰 등록에 실패했습니다.");
+    }
   };
 
-  // 현재 날짜의 급식 정보와 리뷰 가져오기
-  const dailyMeal = selectedSchool
-    ? generateMockMeals(selectedSchool.id, formatDate(currentDate))
-    : null;
-
-  const reviews = selectedSchool
-    ? generateMockReviews(selectedSchool.id, formatDate(currentDate))
-    : [];
-
-  // 각 식사별 평균 평점과 리뷰 수 계산
+  // Calculate stats for current view
   const getMealStats = (mealType: "breakfast" | "lunch" | "dinner") => {
     const mealReviews = reviews.filter(r => r.mealType === mealType);
     const averageRating = mealReviews.length > 0
@@ -108,38 +150,53 @@ export default function App() {
             />
 
             {/* 급식 카드 그리드 */}
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              {dailyMeal?.meals.map((meal: Meal) => {
-                const stats = getMealStats(meal.type);
-                return (
-                  <MealCard
-                    key={meal.type}
-                    meal={meal}
-                    averageRating={stats.averageRating}
-                    reviewCount={stats.reviewCount}
-                    onReviewClick={() => handleReviewClick(meal.type)}
-                  />
-                );
-              })}
-            </div>
+            {isLoadingData ? (
+               <div className="text-center py-12">
+                 <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                 <p className="text-muted-foreground">급식 정보를 불러오는 중...</p>
+               </div>
+            ) : (
+              <>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                  {dailyMeal?.meals && dailyMeal.meals.length > 0 ? (
+                    dailyMeal.meals.map((meal: Meal) => {
+                      const stats = getMealStats(meal.type);
+                      return (
+                        <MealCard
+                          key={meal.type}
+                          meal={meal}
+                          averageRating={stats.averageRating}
+                          reviewCount={stats.reviewCount}
+                          onReviewClick={() => handleReviewClick(meal.type)}
+                        />
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-full text-center py-12 text-muted-foreground bg-card rounded-lg border">
+                      <p>해당 날짜의 급식 정보가 없습니다.</p>
+                    </div>
+                  )}
+                </div>
 
-            {/* 리뷰 탭 */}
-            <Tabs defaultValue="lunch" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="breakfast" className="text-xs sm:text-sm">조식 리뷰</TabsTrigger>
-                <TabsTrigger value="lunch" className="text-xs sm:text-sm">중식 리뷰</TabsTrigger>
-                <TabsTrigger value="dinner" className="text-xs sm:text-sm">석식 리뷰</TabsTrigger>
-              </TabsList>
-              <TabsContent value="breakfast" className="mt-4">
-                <ReviewList reviews={reviews} mealType="breakfast" />
-              </TabsContent>
-              <TabsContent value="lunch" className="mt-4">
-                <ReviewList reviews={reviews} mealType="lunch" />
-              </TabsContent>
-              <TabsContent value="dinner" className="mt-4">
-                <ReviewList reviews={reviews} mealType="dinner" />
-              </TabsContent>
-            </Tabs>
+                {/* 리뷰 탭 */}
+                <Tabs defaultValue="lunch" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="breakfast" className="text-xs sm:text-sm">조식 리뷰</TabsTrigger>
+                    <TabsTrigger value="lunch" className="text-xs sm:text-sm">중식 리뷰</TabsTrigger>
+                    <TabsTrigger value="dinner" className="text-xs sm:text-sm">석식 리뷰</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="breakfast" className="mt-4">
+                    <ReviewList reviews={reviews} mealType="breakfast" />
+                  </TabsContent>
+                  <TabsContent value="lunch" className="mt-4">
+                    <ReviewList reviews={reviews} mealType="lunch" />
+                  </TabsContent>
+                  <TabsContent value="dinner" className="mt-4">
+                    <ReviewList reviews={reviews} mealType="dinner" />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </div>
         ) : (
           <div className="max-w-2xl mx-auto text-center py-12 sm:py-20">

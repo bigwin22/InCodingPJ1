@@ -24,7 +24,7 @@ export function SchoolInfo({ school }: SchoolInfoProps) {
             <div className="flex items-center gap-2 flex-wrap">
               <Star className="size-4 sm:size-5 fill-amber-400 text-amber-400 shrink-0" />
               <span className="text-sm sm:text-base">
-                평균 평점: <strong>{school.averageRating.toFixed(1)}</strong> / 5.0
+                평균 평점: <strong>{(school.averageRating || 0).toFixed(1)}</strong> / 5.0
               </span>
               <Badge variant="secondary" className="ml-0 sm:ml-2 text-xs">
                 전체 평균

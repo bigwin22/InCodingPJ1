@@ -1,14 +1,17 @@
 export interface School {
-  id: string;
+  id: string; // We will use SD_SCHUL_CODE as the ID
+  schoolCode: string;
+  officeCode: string;
   name: string;
   address: string;
-  averageRating: number;
+  averageRating?: number;
 }
 
 export interface Meal {
   type: "breakfast" | "lunch" | "dinner";
   menu: string[];
-  calories?: string;
+  calories: string;
+  nutrition?: Record<string, string>;
 }
 
 export interface DailyMeal {
@@ -17,12 +20,12 @@ export interface DailyMeal {
 }
 
 export interface Review {
-  id: string;
-  schoolId: string;
-  date: string;
+  id: number;
+  schoolCode: string;
+  officeCode: string;
+  mealDate: string;
   mealType: "breakfast" | "lunch" | "dinner";
   rating: number;
-  comment?: string;
-  userId: string;
+  content: string;
   createdAt: string;
 }

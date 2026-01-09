@@ -42,8 +42,8 @@ export function ReviewList({ reviews, mealType }: ReviewListProps) {
               <span className="text-sm font-medium">{review.rating}</span>
             </div>
           </div>
-          {review.comment && (
-            <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>
+          {review.content && (
+            <p className="text-sm text-muted-foreground mt-2">{review.content}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
             {new Date(review.createdAt).toLocaleDateString("ko-KR")}
