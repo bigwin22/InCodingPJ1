@@ -1,0 +1,48 @@
+{
+    "schoolInfo":[
+       {
+          "head":[
+             {
+                "list_total_count":1
+             },
+             {
+                "RESULT":{
+                   "CODE":"INFO-000",
+                   "MESSAGE":"정상 처리되었습니다."
+                }
+             }
+          ]
+       },
+       {
+          "row":[
+             {
+                "ATPT_OFCDC_SC_CODE":"B10",
+                "ATPT_OFCDC_SC_NM":"서울특별시교육청",
+                "SD_SCHUL_CODE":"7010960",
+                "SCHUL_NM":"서울아이티고등학교",
+                "ENG_SCHUL_NM":"Seoul Information Technology High School",
+                "SCHUL_KND_SC_NM":"고등학교",
+                "LCTN_SC_NM":"서울특별시",
+                "JU_ORG_NM":"서울특별시교육청",
+                "FOND_SC_NM":"사립",
+                "ORG_RDNZC":"01773 ",
+                "ORG_RDNMA":"서울특별시 노원구 섬밭로 299",
+                "ORG_RDNDA":"(중계동/서울아이티고등학교)",
+                "ORG_TELNO":"02-948-1901",
+                "HMPG_ADRES":"http://www.seoulit.hs.kr",
+                "COEDU_SC_NM":"남여공학",
+                "ORG_FAXNO":"02-977-8269",
+                "HS_SC_NM":"특성화고",
+                "INDST_SPECL_CCCCL_EXST_YN":"N",
+                "HS_GNRL_BUSNS_SC_NM":"전문계",
+                "SPCLY_PURPS_HS_ORD_NM":"None",
+                "ENE_BFE_SEHF_SC_NM":"전기",
+                "DGHT_SC_NM":"주간",
+                "FOND_YMD":"19921030",
+                "FOAS_MEMRD":"19921030",
+                "LOAD_DTM":"20230615"
+             }
+          ]
+       }
+    ]
+ }

@@ -94,7 +94,7 @@ if __name__ == "__main__":
     api = NEISApi()
     
     print("Testing School Search...")
-    school_results = api.search_school("서울아이티고등학교")
+    school_results = api.search_school("민족사관고등학교")
     print(school_results)
     
     # If a school was found, try fetching meals
