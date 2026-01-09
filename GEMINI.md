@@ -151,6 +151,10 @@ docker-compose up -d
 - **Database ORM**: Supabase client library
 - **API Integration**: NEIS Open API for meal data
 
+### Python
+- **Version**: 3.12
+- **Environment command**: conda activate incoding_meal
+
 ### General
 - Follow component-based architecture
 - Maintain separation between frontend and backend
