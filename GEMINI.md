@@ -1,5 +1,3 @@
-# GEMINI.md
-
 ## Project Overview
 
 ### Theme
@@ -40,6 +38,7 @@ School meal information inquiry and review sharing platform
 
 ### Frontend
 - **Framework**: React
+- **Web Server**: NGINX (for serving static files)
 
 ### Backend
 - **Framework**: FastAPI (Python)
@@ -53,6 +52,7 @@ School meal information inquiry and review sharing platform
 - **Stored Data**:
   - User reviews and ratings
   - Average ratings by school
+- **API KEY** : Key are in .env
 
 ### External APIs
 - **NEIS Open API**: School meal information inquiry
@@ -68,7 +68,7 @@ School meal information inquiry and review sharing platform
 - **Deployment Solution**: Docker Compose
 - **Reverse Proxying**: Traefik
   - Traefik label configuration in docker-compose:
-    ```yaml
+```yaml
     services:
       {NAME}:
         networks:
@@ -85,8 +85,10 @@ School meal information inquiry and review sharing platform
     networks:
       traefik-net:
         external: true
-    ```
+```
   - Port: `4892:4892`
+- **Frontend Serving**: NGINX serves the built React application (static files)
+- **Backend API**: FastAPI handles API requests, proxied through NGINX
 
 ---
 
@@ -96,43 +98,48 @@ School meal information inquiry and review sharing platform
 - Node.js and npm
 - Python 3.x
 - Docker and Docker Compose
+- NGINX
 
 ### Frontend Setup
 
 1. **Install dependencies:**
-   ```bash
+```bash
    npm i
-   ```
+```
 
 2. **Run the development server:**
-   ```bash
+```bash
    npm run dev
-   ```
+```
    This will start a development server on http://localhost:3000.
 
 3. **Build for production:**
-   ```bash
+```bash
    npm run build
-   ```
+```
    This will create a `build` directory with the production-ready files.
 
 ### Backend Setup
 
 1. **Install Python dependencies:**
-   ```bash
+```bash
    pip install -r requirements.txt
-   ```
+```
 
 2. **Run FastAPI server:**
-   ```bash
+```bash
    uvicorn main:app --reload
-   ```
+```
 
 ### Docker Deployment
-
 ```bash
 docker-compose up -d
 ```
+
+### NGINX Configuration
+- NGINX serves frontend static files from the build directory
+- API requests are proxied to the FastAPI backend
+- Configuration includes proper routing for React Router (SPA)
 
 ---
 
@@ -151,12 +158,9 @@ docker-compose up -d
 - **Database ORM**: Supabase client library
 - **API Integration**: NEIS Open API for meal data
 
-### Python
-- **Version**: 3.12
-- **Environment command**: conda activate incoding_meal
-
 ### General
 - Follow component-based architecture
 - Maintain separation between frontend and backend
 - Use environment variables for configuration
 - Implement proper error handling and validation
+- IF you need to make multi tasking, you can make multitask process

@@ -1,5 +1,6 @@
 .DS_Store
-.pyc
-.env
+*.pyc
+*.env
 *CLAUDE.md
 *GEMINI.md
+seed_data.py
