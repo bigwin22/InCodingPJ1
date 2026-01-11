@@ -1,6 +1,6 @@
 import { School, DailyMeal, Review, Meal } from "../types";
 
-const API_BASE_URL = "http://localhost:8000"; // Should be env var in real app
+const API_BASE_URL = ""; // Use relative paths for Nginx proxy
 
 export const api = {
   async searchSchools(query: string): Promise<School[]> {

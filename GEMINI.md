@@ -142,7 +142,7 @@ School meal information inquiry and review sharing platform
 
 2. **Run FastAPI server:**
 ```bash
-   uvicorn main:app --reload
+   uvicorn backend:app --reload
 ```
 
 ### Docker Deployment
@@ -170,7 +170,6 @@ docker-compose up -d
   - **Custom Hooks**: Create and use custom hooks for reusable logic
 - **UI Components**: Extensive use of Radix UI components for component-based UI architecture
 - **Icons**: `lucide-react`
-- **Charts**: `recharts`
 - **Styling**: Tailwind CSS with `tailwind-merge` and `clsx` utilities
 - **Code Quality** (Optional): ESLint, Prettier, or Biome.js
 
