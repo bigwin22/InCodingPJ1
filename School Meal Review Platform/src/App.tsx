@@ -1,132 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { SearchBar } from "./components/SearchBar";
 import { DateNavigation } from "./components/DateNavigation";
 import { MealCard } from "./components/MealCard";
 import { SchoolInfo } from "./components/SchoolInfo";
 import { ReviewDialog } from "./components/ReviewDialog";
 import { ReviewList } from "./components/ReviewList";
-import { School, Meal, DailyMeal, Review } from "./types";
-import { api } from "./lib/api";
-import { formatDate, getNextWeekday } from "./lib/dateUtils";
+import { getNextWeekday } from "./lib/dateUtils";
 import { UtensilsCrossed } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { useSchoolSearch } from "./hooks/useSchoolSearch";
+import { useSchoolData } from "./hooks/useSchoolData";
+import { useReviewSystem } from "./hooks/useReviewSystem";
+import { Meal } from "./types";
 
 export default function App() {
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(getNextWeekday(new Date()));
-  const [isSearching, setIsSearching] = useState(false);
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState<"breakfast" | "lunch" | "dinner" | null>(null);
-  const [averageRating, setAverageRating] = useState<number>(0);
-  
-  // Data states
-  const [dailyMeal, setDailyMeal] = useState<DailyMeal | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Fetch meals and reviews when school or date changes
-  useEffect(() => {
-    async function fetchData() {
-      if (!selectedSchool) {
-        setDailyMeal(null);
-        setReviews([]);
-        return;
-      }
+  // Custom Hooks
+  const { 
+    isSearching, 
+    selectedSchool, 
+    searchSchool 
+  } = useSchoolSearch();
 
-      setIsLoadingData(true);
-      const formattedDate = formatDate(currentDate);
-      
-      try {
-        const [mealsData, reviewsData, stats] = await Promise.all([
-          api.getMeals(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate),
-          api.getReviews(selectedSchool.schoolCode, selectedSchool.officeCode, formattedDate),
-          api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode)
-        ]);
-        
-        setDailyMeal(mealsData);
-        setReviews(reviewsData);
-        setAverageRating(stats.average_rating);
-        
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoadingData(false);
-      }
-    }
+  const { 
+    dailyMeal, 
+    reviews, 
+    averageRating, 
+    isLoadingData, 
+    refreshReviews 
+  } = useSchoolData(selectedSchool, currentDate);
 
-    fetchData();
-    // Only depend on the school code to prevent loops if other school properties change
-  }, [selectedSchool?.schoolCode, currentDate]);
+  const {
+    reviewDialogOpen,
+    setReviewDialogOpen,
+    selectedMealType,
+    openReviewDialog,
+    submitReview
+  } = useReviewSystem(selectedSchool, currentDate, refreshReviews);
 
-  const handleSearch = async (schoolName: string) => {
-    setIsSearching(true);
-    try {
-      const results = await api.searchSchools(schoolName);
-      if (results.length > 0) {
-        setSelectedSchool(results[0]);
-        // Set date to next weekday (or today if it's a weekday)
-        setCurrentDate(getNextWeekday(new Date()));
-      } else {
-        setSelectedSchool(null);
-        alert("검색 결과가 없습니다.");
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      alert("검색 중 오류가 발생했습니다.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  // Handlers wrapped in useCallback
+  const handleSearch = useCallback((schoolName: string) => {
+    searchSchool(schoolName, setCurrentDate);
+  }, [searchSchool]);
 
-  const handleReviewClick = (mealType: "breakfast" | "lunch" | "dinner") => {
-    setSelectedMealType(mealType);
-    setReviewDialogOpen(true);
-  };
-
-  const handleReviewSubmit = async (rating: number, comment: string) => {
-    if (!selectedSchool || !selectedMealType) return;
-
-    const formattedDate = formatDate(currentDate);
-    
-    const success = await api.createReview({
-      schoolCode: selectedSchool.schoolCode,
-      officeCode: selectedSchool.officeCode,
-      mealDate: formattedDate,
-      mealType: selectedMealType,
-      rating,
-      content: comment,
-    });
-
-    if (success) {
-      alert("리뷰가 등록되었습니다!");
-      setReviewDialogOpen(false);
-      setSelectedMealType(null);
-      
-      // Refresh reviews and stats
-      const [updatedReviews, updatedStats] = await Promise.all([
-        api.getReviews(
-          selectedSchool.schoolCode, 
-          selectedSchool.officeCode, 
-          formattedDate
-        ),
-        api.getSchoolStats(selectedSchool.schoolCode, selectedSchool.officeCode)
-      ]);
-      
-      setReviews(updatedReviews);
-      setAverageRating(updatedStats.average_rating);
-    } else {
-      alert("리뷰 등록에 실패했습니다.");
-    }
-  };
-
-  // Calculate stats for current view
-  const getMealStats = (mealType: "breakfast" | "lunch" | "dinner") => {
+  // Memoized stats calculation
+  const getMealStats = useCallback((mealType: "breakfast" | "lunch" | "dinner") => {
     const mealReviews = reviews.filter(r => r.mealType === mealType);
-    const averageRating = mealReviews.length > 0
+    const avg = mealReviews.length > 0
       ? mealReviews.reduce((sum, r) => sum + r.rating, 0) / mealReviews.length
       : 0;
-    return { averageRating, reviewCount: mealReviews.length };
-  };
+    return { averageRating: avg, reviewCount: mealReviews.length };
+  }, [reviews]);
+
+  // Memoize the SchoolInfo component props
+  const schoolInfoProps = useMemo(() => {
+    if (!selectedSchool) return null;
+    return { ...selectedSchool, averageRating };
+  }, [selectedSchool, averageRating]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -143,10 +74,10 @@ export default function App() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 sm:py-8">
-        {selectedSchool ? (
+        {selectedSchool && schoolInfoProps ? (
           <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* 학교 정보 */}
-            <SchoolInfo school={{ ...selectedSchool, averageRating }} />
+            <SchoolInfo school={schoolInfoProps} />
 
             {/* 날짜 네비게이션 */}
             <DateNavigation
@@ -172,7 +103,7 @@ export default function App() {
                           meal={meal}
                           averageRating={stats.averageRating}
                           reviewCount={stats.reviewCount}
-                          onReviewClick={() => handleReviewClick(meal.type)}
+                          onReviewClick={() => openReviewDialog(meal.type)}
                         />
                       );
                     })
@@ -220,7 +151,7 @@ export default function App() {
       <ReviewDialog
         open={reviewDialogOpen}
         onOpenChange={setReviewDialogOpen}
-        onSubmit={handleReviewSubmit}
+        onSubmit={submitReview}
         mealType={selectedMealType}
       />
     </div>

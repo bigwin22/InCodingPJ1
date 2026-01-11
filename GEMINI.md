@@ -24,7 +24,8 @@ School meal information inquiry and review sharing platform
 
 #### Review and Rating
 - Star rating registration by meal type (breakfast/lunch/dinner)
-- User authentication: Cookie-based simple authentication (initial version)
+- User authentication: Google OAuth (to be implemented in final stage)
+- Initial development: Cookie-based simple authentication → Final: Google OAuth migration
 
 ### Priority 1 (Optional Implementation)
 
@@ -37,7 +38,14 @@ School meal information inquiry and review sharing platform
 ## Tech Stack
 
 ### Frontend
-- **Framework**: React
+- **Framework**: React with Vite
+- **Language**: TypeScript (Required)
+- **Required React Hooks** (Must be used):
+  - `useState`: State management
+  - `useEffect`: Side effects and lifecycle management
+  - `useMemo`: Performance optimization through memoization
+  - `useCallback`: Function memoization
+  - **Custom Hooks**: Implement and utilize custom hooks
 - **Web Server**: NGINX (for serving static files)
 
 ### Backend
@@ -46,16 +54,21 @@ School meal information inquiry and review sharing platform
   - NEIS API integration and data processing
   - Review data processing
   - Rating calculation logic
+  - OAuth authentication flow management
 
 ### Database
-- **Platform**: Supabase
+- **Platform**: Supabase (Cloud Database)
+- **Deployment**: Dual deployment (Cloud + Self-hosted server)
 - **Stored Data**:
+  - User information (OAuth user data)
   - User reviews and ratings
   - Average ratings by school
-- **API KEY** : Key are in .env
+  - Authentication tokens and session data
+- **API Keys**: Keys are stored in .env file
 
 ### External APIs
 - **NEIS Open API**: School meal information inquiry
+- **Google OAuth 2.0**: User authentication
 - **Map API**: School location display (optional implementation)
 
 ---
@@ -63,6 +76,7 @@ School meal information inquiry and review sharing platform
 ## Deployment
 
 - **Domain**: meal.newme.dev
+- **Server Domain**: onlyforme.newme.dev
 - **Server Location**: `/home/kth88/services/incoding_meal/(prod/dev)`
 - **Container Name**: `incoding_meal(prod/dev)`
 - **Deployment Solution**: Docker Compose
@@ -145,22 +159,42 @@ docker-compose up -d
 
 ## Development Conventions
 
-### Frontend
+### Frontend (Required)
 - **Framework**: React with Vite
+- **Language**: TypeScript (Mandatory)
+- **Required React Hooks Usage**:
+  - `useState`: For component state management
+  - `useEffect`: For side effects, API calls, and lifecycle events
+  - `useMemo`: For expensive computations and rendering optimization
+  - `useCallback`: For function memoization to prevent unnecessary re-renders
+  - **Custom Hooks**: Create and use custom hooks for reusable logic
 - **UI Components**: Extensive use of Radix UI components for component-based UI architecture
 - **Icons**: `lucide-react`
 - **Charts**: `recharts`
 - **Styling**: Tailwind CSS with `tailwind-merge` and `clsx` utilities
-- **Recommended**: Add ESLint and Prettier for code consistency
+- **Code Quality** (Optional): ESLint, Prettier, or Biome.js
 
 ### Backend
 - **Framework**: FastAPI
-- **Database ORM**: Supabase client library
-- **API Integration**: NEIS Open API for meal data
+- **Database**: Supabase client library
+- **API Integration**: 
+  - NEIS Open API for meal data
+  - Google OAuth 2.0 for authentication
+
+### Authentication
+- **Development Phase**: Cookie-based simple authentication
+- **Production Phase**: Google OAuth 2.0
+- **Implementation Priority**: OAuth integration in final development stage
+
+### Database Strategy
+- **Primary**: Supabase Cloud Database
 
 ### General
 - Follow component-based architecture
 - Maintain separation between frontend and backend
 - Use environment variables for configuration
 - Implement proper error handling and validation
-- IF you need to make multi tasking, you can make multitask process
+- Utilize TypeScript for type safety across the application
+- Demonstrate understanding of React rendering cycle through proper hook usage
+- If you need to make multi tasking, you can make multitask process
+- Use Korean
