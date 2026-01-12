@@ -13,23 +13,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create Frontend .env file
+        run: |
+          cd "School Meal Review Platform"
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
+          echo "VITE_SUPABASE_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          cat .env
+
+      - name: Build Frontend Image
+        run: docker build -t meal-frontend:latest -f "School Meal Review Platform/Dockerfile" "School Meal Review Platform"
+
       - name: Build Backend Image
         run: docker build -t meal-backend:latest -f Dockerfile.backend .
 
       - name: Save Backend Image
         run: docker save meal-backend:latest -o backend.tar
 
-      - name: Build Frontend Image
-        run: docker build -t meal-frontend:latest -f "School Meal Review Platform/Dockerfile" "School Meal Review Platform"
-
       - name: Save Frontend Image
         run: docker save meal-frontend:latest -o frontend.tar
 
-      - name: Create .env file
+      - name: Create Backend .env file
         run: |
-          echo "NEIS_API_KEY=${{ secrets.NEIS_API_KEY }}" >> .env
+          echo "NEIS_API_KEY=${{ secrets.NEIS_API_KEY }}" > .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
 
       - name: Copy files to server
         uses: appleboy/scp-action@master

@@ -10,10 +10,11 @@ import { useAuth } from "../contexts/AuthContext";
 interface SchoolSettingsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSchoolSelected?: (school: School) => void; // Callback when school is selected
   mustSelect?: boolean; // If true, user cannot close without selecting (for first time setup)
 }
 
-export function SchoolSettings({ open, onOpenChange, mustSelect = false }: SchoolSettingsProps) {
+export function SchoolSettings({ open, onOpenChange, onSchoolSelected, mustSelect = false }: SchoolSettingsProps) {
   const { token, updateUser, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<School[]>([]);
@@ -36,14 +37,17 @@ export function SchoolSettings({ open, onOpenChange, mustSelect = false }: Schoo
 
   const handleSelect = async (school: School) => {
     if (!token) return;
-    
+
     try {
         const updatedUser = await api.updateUserSchool(token, school.schoolCode, school.officeCode, school.name);
         if (updatedUser) {
             updateUser(updatedUser);
-            if (!mustSelect) {
-                onOpenChange(false);
+            // 선택된 학교를 부모 컴포넌트에 전달
+            if (onSchoolSelected) {
+                onSchoolSelected(school);
             }
+            // 학교 선택이 성공하면 무조건 모달 닫기
+            onOpenChange(false);
         }
     } catch (error) {
         console.error("Failed to update school", error);

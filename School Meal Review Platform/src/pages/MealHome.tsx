@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { SearchBar } from "../components/SearchBar";
 import { DateNavigation } from "../components/DateNavigation";
 import { MealCard } from "../components/MealCard";
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { useSchoolSearch } from "../hooks/useSchoolSearch";
 import { useSchoolData } from "../hooks/useSchoolData";
 import { useReviewSystem } from "../hooks/useReviewSystem";
-import { Meal } from "../types";
+import { Meal, School } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginButton } from "../components/LoginButton";
 import { Button } from "../components/ui/button";
@@ -20,10 +20,11 @@ import { api } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 
 export function MealHome() {
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, isLoading } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date>(getNextWeekday(new Date()));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+  const lastUserSchoolCode = useRef<string | null | undefined>(undefined);
 
   // Custom Hooks
   const { 
@@ -49,26 +50,54 @@ export function MealHome() {
     submitReview
   } = useReviewSystem(selectedSchool, currentDate, refreshReviews);
 
-  // Auto-select user's school on login
+  // Auto-select user's school on login or when school_code changes
   useEffect(() => {
     const loadUserSchool = async () => {
-      if (user?.school_code && user?.school_name) {
-        if (selectedSchool?.schoolCode === user.school_code) return;
+      // 인증 로딩 중이면 대기
+      if (isLoading) {
+        console.log("Auth loading, waiting...");
+        return;
+      }
+
+      // 로그인하지 않은 경우
+      if (!user) {
+        lastUserSchoolCode.current = undefined;
+        return;
+      }
+
+      // 학교 코드가 변경되지 않았으면 다시 로드하지 않음
+      // 단, 초기 상태(undefined)가 아닐 때만 비교
+      const currentSchoolCode = user.school_code || null;
+      if (lastUserSchoolCode.current !== undefined && currentSchoolCode === lastUserSchoolCode.current) {
+        console.log("School code unchanged, skipping load");
+        return;
+      }
+
+      // 학교 코드 업데이트
+      console.log("School code changed:", lastUserSchoolCode.current, "->", currentSchoolCode);
+      lastUserSchoolCode.current = currentSchoolCode;
+
+      // 학교가 설정되어 있는 경우
+      if (user.school_code && user.school_name) {
+        console.log("Loading user school:", user.school_name);
         try {
            const results = await api.searchSchools(user.school_name);
            const match = results.find(s => s.schoolCode === user.school_code);
            if (match) {
              setSelectedSchool(match);
+             console.log("User school loaded:", match.name);
            }
         } catch (e) {
           console.error("Failed to load user school", e);
         }
-      } else if (user && !user.school_code) {
+      } else {
+        // 학교가 설정되어 있지 않은 경우 모달 표시
+        console.log("No school set, opening settings modal");
         setSettingsOpen(true);
       }
     };
     loadUserSchool();
-  }, [user, setSelectedSchool, selectedSchool]);
+  }, [user, isLoading, setSelectedSchool]);
 
   // Handlers wrapped in useCallback
   const handleSearch = useCallback((schoolName: string) => {
@@ -90,6 +119,11 @@ export function MealHome() {
   const handleSubmitReview = async (rating: number, content: string) => {
       if (!token) return;
       await submitReview(rating, content, token);
+  };
+
+  const handleSchoolSelected = (school: School) => {
+      console.log("School selected:", school.name);
+      setSelectedSchool(school);
   };
 
   // Memoized stats calculation
@@ -225,9 +259,10 @@ export function MealHome() {
       />
 
       {/* Settings Dialog */}
-      <SchoolSettings 
-        open={settingsOpen} 
-        onOpenChange={setSettingsOpen} 
+      <SchoolSettings
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onSchoolSelected={handleSchoolSelected}
         mustSelect={user ? !user.school_code : false}
       />
     </div>

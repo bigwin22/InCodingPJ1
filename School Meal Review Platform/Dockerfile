@@ -7,6 +7,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Copy .env file (created in CI/CD)
+COPY .env .env
+
 # Copy source code
 COPY . .
 
