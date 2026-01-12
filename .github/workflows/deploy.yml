@@ -13,15 +13,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create Frontend .env file
-        run: |
-          cd "School Meal Review Platform"
-          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
-          echo "VITE_SUPABASE_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
-          cat .env
-
       - name: Build Frontend Image
-        run: docker build -t meal-frontend:latest -f "School Meal Review Platform/Dockerfile" "School Meal Review Platform"
+        run: |
+          docker build \
+            --build-arg VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            --build-arg VITE_SUPABASE_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -t meal-frontend:latest \
+            -f "School Meal Review Platform/Dockerfile" \
+            "School Meal Review Platform"
 
       - name: Build Backend Image
         run: docker build -t meal-backend:latest -f Dockerfile.backend .

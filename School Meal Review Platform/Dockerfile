@@ -3,17 +3,22 @@ FROM node:18-alpine as build
 
 WORKDIR /app
 
+# Build arguments for environment variables
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_KEY
+
+# Set environment variables for Vite to pick up during build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_KEY=$VITE_SUPABASE_KEY
+
 # Copy package files
 COPY package*.json ./
 RUN npm ci
 
-# Copy .env file (created in CI/CD)
-COPY .env .env
-
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with environment variables
 RUN npm run build
 
 # Production stage
