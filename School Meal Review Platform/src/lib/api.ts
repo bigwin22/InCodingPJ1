@@ -1,8 +1,74 @@
-import { School, DailyMeal, Review, Meal } from "../types";
+import { School, DailyMeal, Review, Meal, User } from "../types";
 
 const API_BASE_URL = ""; // Use relative paths for Nginx proxy
 
 export const api = {
+  // Removed login function as it's handled by Supabase Auth on frontend
+
+  async getMe(token: string): Promise<User | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch user profile");
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  },
+
+  async updateUserSchool(token: string, schoolCode: string, officeCode: string, schoolName: string): Promise<User | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/school`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ school_code: schoolCode, office_code: officeCode, school_name: schoolName }),
+      });
+      if (!response.ok) throw new Error("Failed to update school");
+      return await response.json();
+    } catch (error) {
+      console.error("Error updating user school:", error);
+      return null;
+    }
+  },
+
+  async getMyReviews(token: string): Promise<Review[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/reviews`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch my reviews");
+      const data = await response.json();
+      return mapBackendReviewsToFrontend(data.reviews);
+    } catch (error) {
+      console.error("Error fetching my reviews:", error);
+      return [];
+    }
+  },
+
+  async deleteReview(id: number, token: string): Promise<boolean> {
+      try {
+          const response = await fetch(`${API_BASE_URL}/api/reviews/${id}`, {
+              method: "DELETE",
+              headers: {
+                  "Authorization": `Bearer ${token}`
+              }
+          });
+          return response.ok;
+      } catch (error) {
+          console.error("Error deleting review:", error);
+          return false;
+      }
+  },
+
   async searchSchools(query: string): Promise<School[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/schools?name=${encodeURIComponent(query)}`);
@@ -15,7 +81,7 @@ export const api = {
         officeCode: s.ATPT_OFCDC_SC_CODE,
         name: s.SCHUL_NM,
         address: s.ORG_RDNMA,
-        averageRating: 0, // Will be fetched separately if needed
+        averageRating: 0, 
       }));
     } catch (error) {
       console.error("Error searching schools:", error);
@@ -25,7 +91,6 @@ export const api = {
 
   async getMeals(schoolCode: string, officeCode: string, date: string): Promise<DailyMeal> {
     try {
-      // API expects YYYYMMDD
       const formattedDate = date.replace(/-/g, "");
       const response = await fetch(
         `${API_BASE_URL}/api/meals?school_code=${schoolCode}&office_code=${officeCode}&date=${formattedDate}`
@@ -62,7 +127,6 @@ export const api = {
       let url = `${API_BASE_URL}/api/reviews?school_code=${schoolCode}&office_code=${officeCode}`;
       if (date) url += `&meal_date=${date.replace(/-/g, "")}`;
       if (mealType) {
-        // Map frontend type to backend type
         const typeMap: Record<string, string> = {
           "breakfast": "조식",
           "lunch": "중식",
@@ -75,30 +139,14 @@ export const api = {
       if (!response.ok) throw new Error("Failed to fetch reviews");
       const data = await response.json();
       
-      return data.reviews.map((r: any) => {
-         // Map backend type to frontend type
-         let type: "breakfast" | "lunch" | "dinner" = "lunch";
-         if (r.meal_type === "조식") type = "breakfast";
-         else if (r.meal_type === "석식") type = "dinner";
-
-         return {
-            id: r.id,
-            schoolCode: r.school_code,
-            officeCode: r.office_code,
-            mealDate: r.meal_date,
-            mealType: type,
-            rating: r.rating,
-            content: r.content,
-            createdAt: r.created_at
-         };
-      });
+      return mapBackendReviewsToFrontend(data.reviews);
     } catch (error) {
       console.error("Error fetching reviews:", error);
       return [];
     }
   },
 
-  async createReview(review: Omit<Review, "id" | "createdAt">): Promise<boolean> {
+  async createReview(review: Omit<Review, "id" | "createdAt">, token: string): Promise<boolean> {
     try {
        const typeMap: Record<string, string> = {
           "breakfast": "조식",
@@ -119,6 +167,7 @@ export const api = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(payload),
       });
@@ -126,6 +175,7 @@ export const api = {
       if (!response.ok) {
           const errorData = await response.json();
           console.error("Failed to create review:", errorData);
+          alert(errorData.detail); 
           return false;
       }
       return true;
@@ -146,3 +196,22 @@ export const api = {
       }
   }
 };
+
+function mapBackendReviewsToFrontend(reviews: any[]): Review[] {
+    return reviews.map((r: any) => {
+         let type: "breakfast" | "lunch" | "dinner" = "lunch";
+         if (r.meal_type === "조식") type = "breakfast";
+         else if (r.meal_type === "석식") type = "dinner";
+
+         return {
+            id: r.id,
+            schoolCode: r.school_code,
+            officeCode: r.office_code,
+            mealDate: r.meal_date,
+            mealType: type,
+            rating: r.rating,
+            content: r.content,
+            createdAt: r.created_at
+         };
+    });
+}

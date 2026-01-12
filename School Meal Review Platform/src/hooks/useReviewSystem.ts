@@ -18,7 +18,7 @@ export function useReviewSystem(
     setReviewDialogOpen(true);
   }, []);
 
-  const submitReview = useCallback(async (rating: number, comment: string) => {
+  const submitReview = useCallback(async (rating: number, comment: string, token: string) => {
     if (!selectedSchool || !selectedMealType) return;
 
     const formattedDate = formatDate(currentDate);
@@ -30,7 +30,7 @@ export function useReviewSystem(
       mealType: selectedMealType,
       rating,
       content: comment,
-    });
+    }, token);
 
     if (success) {
       alert("리뷰가 등록되었습니다!");
@@ -38,7 +38,9 @@ export function useReviewSystem(
       setSelectedMealType(null);
       onReviewSubmitted();
     } else {
-      alert("리뷰 등록에 실패했습니다.");
+      // The alert for failure is now handled in api.createReview for more specific messages, 
+      // but keeping a generic fallback here is fine or just relying on api.
+      // Since I added alert in api.ts, I can remove it here or keep it.
     }
   }, [selectedSchool, selectedMealType, currentDate, onReviewSubmitted]);
 

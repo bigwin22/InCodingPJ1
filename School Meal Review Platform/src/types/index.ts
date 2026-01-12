@@ -29,3 +29,19 @@ export interface Review {
   content: string;
   createdAt: string;
 }
+
+export interface User {
+  id: string;
+  google_id: string;
+  email: string;
+  name: string;
+  school_code?: string;
+  office_code?: string;
+  school_name?: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
