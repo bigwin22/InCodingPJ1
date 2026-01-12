@@ -146,7 +146,7 @@ export const api = {
     }
   },
 
-  async createReview(review: Omit<Review, "id" | "createdAt">, token: string): Promise<boolean> {
+  async createReview(review: Omit<Review, "id" | "createdAt" | "userId">, token: string): Promise<boolean> {
     try {
        const typeMap: Record<string, string> = {
           "breakfast": "조식",
@@ -181,6 +181,7 @@ export const api = {
       return true;
     } catch (error) {
       console.error("Error creating review:", error);
+      alert("리뷰 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       return false;
     }
   },
@@ -205,6 +206,7 @@ function mapBackendReviewsToFrontend(reviews: any[]): Review[] {
 
          return {
             id: r.id,
+            userId: r.user_id,
             schoolCode: r.school_code,
             officeCode: r.office_code,
             mealDate: r.meal_date,

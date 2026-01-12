@@ -9,30 +9,48 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
+import { Review } from "../types";
 
 interface ReviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (rating: number, comment: string) => void;
   mealType: "breakfast" | "lunch" | "dinner" | null;
+  existingReview?: Review | null;
+  isSubmitting?: boolean;
 }
 
-export function ReviewDialog({ open, onOpenChange, onSubmit, mealType }: ReviewDialogProps) {
+export function ReviewDialog({ 
+  open, 
+  onOpenChange, 
+  onSubmit, 
+  mealType,
+  existingReview,
+  isSubmitting
+}: ReviewDialogProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      if (existingReview) {
+        setRating(existingReview.rating);
+        setComment(existingReview.content || "");
+      } else {
+        setRating(0);
+        setComment("");
+      }
+    } else {
       setRating(0);
       setHoveredRating(0);
       setComment("");
     }
-  }, [open]);
+  }, [open, existingReview]);
 
   const handleSubmit = () => {
-    if (rating > 0) {
+    if (rating > 0 && !isSubmitting) {
       onSubmit(rating, comment);
     }
   };
@@ -48,10 +66,10 @@ export function ReviewDialog({ open, onOpenChange, onSubmit, mealType }: ReviewD
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mealType ? `${mealTypeLabels[mealType]} 리뷰 작성` : "리뷰 작성"}
+            {mealType ? `${mealTypeLabels[mealType]} 리뷰 ${existingReview ? '수정' : '작성'}` : "리뷰 작성"}
           </DialogTitle>
           <DialogDescription>
-            오늘 급식은 어떠셨나요? 별점과 의견을 남겨주세요.
+            {existingReview ? "이미 작성하신 리뷰를 수정할 수 있습니다." : "오늘 급식은 어떠셨나요? 별점과 의견을 남겨주세요."}
           </DialogDescription>
         </DialogHeader>
 
@@ -67,7 +85,8 @@ export function ReviewDialog({ open, onOpenChange, onSubmit, mealType }: ReviewD
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
-                  className="transition-transform hover:scale-110 focus:outline-none"
+                  disabled={isSubmitting}
+                  className="transition-transform hover:scale-110 focus:outline-none disabled:opacity-50"
                 >
                   <Star
                     className={`size-10 transition-colors ${
@@ -98,6 +117,7 @@ export function ReviewDialog({ open, onOpenChange, onSubmit, mealType }: ReviewD
               onChange={(e) => setComment(e.target.value)}
               rows={4}
               className="resize-none"
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -106,14 +126,16 @@ export function ReviewDialog({ open, onOpenChange, onSubmit, mealType }: ReviewD
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
           >
             취소
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={rating === 0}
+            disabled={rating === 0 || isSubmitting}
           >
-            리뷰 등록
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {existingReview ? '리뷰 수정' : '리뷰 등록'}
           </Button>
         </DialogFooter>
       </DialogContent>

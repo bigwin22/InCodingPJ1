@@ -46,9 +46,11 @@ export function MealHome() {
     reviewDialogOpen,
     setReviewDialogOpen,
     selectedMealType,
+    existingReview,
+    isSubmitting,
     openReviewDialog,
     submitReview
-  } = useReviewSystem(selectedSchool, currentDate, refreshReviews);
+  } = useReviewSystem(selectedSchool, currentDate, refreshReviews, reviews, user?.id);
 
   // Auto-select user's school on login or when school_code changes
   useEffect(() => {
@@ -256,6 +258,8 @@ export function MealHome() {
         onOpenChange={setReviewDialogOpen}
         onSubmit={handleSubmitReview}
         mealType={selectedMealType}
+        existingReview={existingReview}
+        isSubmitting={isSubmitting}
       />
 
       {/* Settings Dialog */}

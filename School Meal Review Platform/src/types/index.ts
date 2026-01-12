@@ -21,6 +21,7 @@ export interface DailyMeal {
 
 export interface Review {
   id: number;
+  userId: string;
   schoolCode: string;
   officeCode: string;
   mealDate: string;

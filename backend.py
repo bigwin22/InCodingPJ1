@@ -281,7 +281,11 @@ async def create_review(review: ReviewCreate, current_user: User = Depends(get_c
              "content": review.content,
              "updated_at": datetime.utcnow().isoformat()
          }).eq("id", review_id).execute()
-         return update_response.data[0]
+         
+         if update_response.data:
+             return update_response.data[0]
+         else:
+             raise HTTPException(status_code=500, detail="Failed to update review")
 
     # Create new
     data = review.dict()
