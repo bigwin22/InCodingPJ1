@@ -68,8 +68,14 @@ export function MealHome() {
       }
 
       // 학교 코드가 변경되지 않았으면 다시 로드하지 않음
-      // 단, 초기 상태(undefined)가 아닐 때만 비교
       const currentSchoolCode = user.school_code || null;
+      
+      // 학교 정보가 있다가 없어지는 경우는 무시 (재인증/동기화 중 일시적 상태일 가능성 높음)
+      if (lastUserSchoolCode.current && !currentSchoolCode) {
+         console.log("School code temporarily missing, skipping update");
+         return;
+      }
+
       if (lastUserSchoolCode.current !== undefined && currentSchoolCode === lastUserSchoolCode.current) {
         console.log("School code unchanged, skipping load");
         return;
@@ -93,7 +99,7 @@ export function MealHome() {
           console.error("Failed to load user school", e);
         }
       } else {
-        // 학교가 설정되어 있지 않은 경우 모달 표시
+        // 이전에 학교 설정이 없었고 지금도 없는 경우에만 모달 표시
         console.log("No school set, opening settings modal");
         setSettingsOpen(true);
       }
