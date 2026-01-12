@@ -7,10 +7,6 @@ WORKDIR /app
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_KEY
 
-# Set environment variables for Vite to pick up during build
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_KEY=$VITE_SUPABASE_KEY
-
 # Copy package files
 COPY package*.json ./
 RUN npm ci
@@ -18,7 +14,14 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application with environment variables
+# Create .env file from build arguments
+RUN echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" > .env && \
+    echo "VITE_SUPABASE_KEY=${VITE_SUPABASE_KEY}" >> .env && \
+    echo "=== Created .env file ===" && \
+    cat .env && \
+    echo "========================"
+
+# Build the application (Vite will read from .env file)
 RUN npm run build
 
 # Production stage

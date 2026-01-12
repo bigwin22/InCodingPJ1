@@ -15,6 +15,9 @@ jobs:
 
       - name: Build Frontend Image
         run: |
+          echo "=== Building Frontend Image ==="
+          echo "VITE_SUPABASE_URL is set: ${{ secrets.VITE_SUPABASE_URL != '' }}"
+          echo "VITE_SUPABASE_ANON_KEY is set: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}"
           docker build \
             --build-arg VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
             --build-arg VITE_SUPABASE_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
@@ -57,17 +60,29 @@ jobs:
           port: ${{ secrets.PORT || '22' }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
-            
-            # Load images
+
+            # Stop existing containers
+            echo "Stopping existing containers..."
+            docker-compose down
+
+            # Remove old images to force using new ones
+            echo "Removing old images..."
+            docker rmi meal-backend:latest meal-frontend:latest || true
+
+            # Load new images
             echo "Loading backend image..."
             docker load -i backend.tar
             echo "Loading frontend image..."
             docker load -i frontend.tar
-            
-            # Restart services
-            docker-compose down
+
+            # Start services
+            echo "Starting services..."
             docker-compose up -d
-            
+
+            # Show logs for debugging
+            echo "=== Frontend container logs ==="
+            docker logs incoding_meal --tail 50
+
             # Cleanup artifacts
             rm backend.tar frontend.tar
             docker system prune -f
