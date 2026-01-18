@@ -63,7 +63,7 @@ jobs:
 
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down
+            docker compose down
 
             # Remove old images to force using new ones
             echo "Removing old images..."
@@ -77,7 +77,7 @@ jobs:
 
             # Start services
             echo "Starting services..."
-            docker-compose up -d
+            docker compose up -d
 
             # Show logs for debugging
             echo "=== Frontend container logs ==="
