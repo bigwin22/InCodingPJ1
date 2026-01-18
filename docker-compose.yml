@@ -31,7 +31,7 @@ services:
       - "traefik.http.routers.incoding_meal.rule=Host(`meal.newme.dev`)"
       - "traefik.http.routers.incoding_meal.entrypoints=web"
       # - "traefik.http.routers.incoding_meal.tls.certresolver=letsencrypt"
-      - "traefik.http.services.incoding_meal.loadbalancer.server.port=4892"
+      # - "traefik.http.services.incoding_meal.loadbalancer.server.port=4892"
 
 networks:
   meal_network:
