@@ -1,5 +1,4 @@
-version: '3.8'
-
+name: meal-review-platform
 services:
   backend:
     image: meal-backend:latest
