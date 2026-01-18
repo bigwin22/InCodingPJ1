@@ -29,8 +29,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.incoding_meal.rule=Host(`meal.newme.dev`)"
-      - "traefik.http.routers.incoding_meal.entrypoints=web,websecure"
-      - "traefik.http.routers.incoding_meal.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.incoding_meal.entrypoints=web"
+      # - "traefik.http.routers.incoding_meal.tls.certresolver=letsencrypt"
       - "traefik.http.services.incoding_meal.loadbalancer.server.port=4892"
 
 networks:
